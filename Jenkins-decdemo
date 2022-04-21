@@ -1,17 +1,32 @@
-pipeline{
+pipeline {
     agent any
-    stages{
-        stage("GIT checkout"){
-            steps{
-                git credentialsId: 'javahome', url: 'https://github.com/srinivas1987devops/myweb.git'
-                
+
+    stages {
+        stage('Git checkout') {
+            steps {
+                git 'https://github.com/vinod96423/myweb.git'
             }
         }
-        stage("Maven Build"){
-            steps{
+        stage('build') {
+            steps {
                 sh "mvn clean package"
                 sh "mv target/*.war target/myweb.war"
             }
-         }
+        }
+        stage('deploy') {
+            steps {
+                sshagent(['tomcat-new']) {
+                sh """
+                    scp -o StrictHostKeyChecking=no target/myweb.war  ec2-user@35.78.65.88:/home/ec2-user/apache-tomcat-9.0.62/webapps/
+                    
+                    ssh ec2-user@35.78.65.88 /home/ec2-user/apache-tomcat-9.0.62/bin/shutdown.sh
+                    
+                    ssh ec2-user@35.78.65.88 /home/ec2-user/apache-tomcat-9.0.62/bin/startup.sh
+                
+                """
+                }
+            }
+        }
     }
 }
+
